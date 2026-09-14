@@ -74,7 +74,7 @@ def send_to_telegram(message):
     print("텔레그램으로 글 전송 성공!")
   else:
     # 이 부분이 실패했을 때 정확한 텔레그램 서버의 에러 메시지를 출력해 줍니다.
-    pritn(f"전송 실패! 에러 코드: {response.status_code}")
+    print(f"전송 실패! 에러 코드: {response.status_code}")
     print(f"에러 내용: {response.text}")
 
 if __name__ == "__main__":
