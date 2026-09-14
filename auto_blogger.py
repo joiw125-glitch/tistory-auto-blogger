@@ -73,7 +73,9 @@ def send_to_telegram(message):
   if response.status_code == 200:
     print("텔레그램으로 글 전송 성공!")
   else:
-    print(f"전송 실패: {response.text}")
+    # 이 부분이 실패했을 때 정확한 텔레그램 서버의 에러 메시지를 출력해 줍니다.
+    pritn(f"전송 실패! 에러 코드: {response.status_code}")
+    print(f"에러 내용: {response.text}")
 
 if __name__ == "__main__":
   print("AI가 오늘의 건강 이슈를 검색하고 글을 작성 중입니다...")
