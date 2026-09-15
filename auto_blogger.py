@@ -62,22 +62,25 @@ def generate_blog_content():
     )
     return response.text
 
-def send_to_telegram(message):
+def send_to_telegram(text):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     
-    # 텔레그램은 제한된 태그만 허용하므로, 파싱 에러를 막기 위해 일반 텍스트 모드로 전송합니다.
-    # (티스토리 HTML 에디터에 붙여넣을 때는 AI가 생성해준 HTML 태그가 그대로 살아있어 정상 작동합니다!)
-    payload = {
-        "chat_id": TELEGRAM_CHAT_ID,
-        "text": message
-        # parse_mode를 제거하여 텔레그램이 HTML 태그 때문에 거부하는 현상을 원천 차단합니다.
-    }
-    
-    response = requests.post(url, json=payload)
-    if response.status_code == 200:
-        print("텔레그램으로 글 전송 성공!")
+    # 텔레그램 글자 수 제한(4096자)을 우회하기 위해 4000자 단위로 쪼개서 전송
+    max_length = 4000
+    if len(text) <= max_length:
+        payload = {"chat_id": TELEGRAM_CHAT_ID, "text": text}
+        response = requests.post(url, json=payload)
+        if response.status_code != 200:
+            print(f"전송 실패! 에러 내용: {response.text}")
     else:
-        print(f"전송 실패! 에러 내용: {response.text}")
+        # 글이 너무 길면 쪼개서 연속 전송
+        for i in range(0, len(text), max_length):
+            chunk = text[i:i + max_length]
+            payload = {"chat_id": TELEGRAM_CHAT_ID, "text": chunk}
+            response = requests.post(url, json=payload)
+            if response.status_code != 200:
+                print(f"분할 전송 실패! 에러 내용: {response.text}")
+                break
 
 if __name__ == "__main__":
     print("메인 프로그램 시작")
