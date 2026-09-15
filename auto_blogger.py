@@ -7,20 +7,16 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-print("1. 환경 변수 로드 완료")
-
 def generate_blog_content():
-    print("2. 제미나이 API 호출 시작...")
     client = genai.Client(api_key=GEMINI_API_KEY)
     
     prompt = """
     당신은 5060 중장년층을 타깃으로 하는 전문 건강 블로그 라이터이자, SEO 콘텐츠 디자이너입니다.
     오늘 날짜 기준으로 최근 대중에게 화제가 되었거나 이슈가 된 건강 정보/질환/이슈를 하나 선정하고, 아래 지침에 맞춰 블로그 포스팅을 작성해 주세요.
 
-    [Part 1. HTML 태그 구조 지침]
-    - 티스토리 HTML 에디터에 바로 붙여넣을 수 있도록, 반드시 **HTML 태그(`<h3>`, `<h4>`, `<p>`, `<ul>`, `<li>`, `<strong>` 등)**를 사용하여 가독성 있게 작성하세요.
-    - 글의 대제목(단락 제목)은 반드시 `<h3>` 태그를 사용하되, 학술적/보고서용 단어('개요', '메커니즘' 등)는 절대 쓰지 말고 5060 독자가 친근하게 느낄 수 있는 질문형이나 설명형으로 작성하세요.
-    - 세부 소제목이나 항목 제목은 반드시 `<h4>` 태그를 사용하세요.
+    [Part 1. 티스토리 HTML 에디터 맞춤형 지침]
+    - 티스토리 HTML 에디터에 그대로 복사·붙여넣기 할 것이므로, 본문 내용은 반드시 **HTML 태그(`<h3>`, `<h4>`, `<p>`, `<strong>` 등)**를 사용하여 가독성 있게 작성하세요.
+    - 글의 대제목은 `<h3>` 태그, 소제목은 `<h4>` 태그를 사용하세요.
     
     글의 흐름은 반드시 아래 7가지 구조를 따르세요:
     1. [도입부]: 독자의 공감을 이끌어내는 질문과 경각심을 유발하는 배경 설명.
@@ -32,7 +28,7 @@ def generate_blog_content():
     7. [마치며]: 전체 내용 요약 및 따뜻한 격려와 응원의 메시지.
 
     [Part 2. 쿠팡 파트너스 및 추천제품 지침]
-    - **[중요]** 본문 맨 상단(제목 바로 아래, 도입부 시작 전)에 아래 공정고시 문구를 HTML로 반드시 배치해 주세요.
+    - **[중요]** 본문 맨 상단(제목 바로 아래, 도입부 시작 전)에 아래 공정고시 문구를 반드시 배치해 주세요.
       <p style="font-size: 13px; color: #555; margin-bottom: 20px;"><em>"이 포스팅은 쿠팡 파트너스 활동의 일환으로, 이에 따른 일정액의 수수료를 제공받습니다."</em></p>
     - [태그] 윗부분에 **[쿠팡 추천제품]** 항목을 만들어, 이번 포스팅 주제와 가장 어울리는 쿠팡 판매 상품명을 1개 추천해 주세요.
 
@@ -46,7 +42,7 @@ def generate_blog_content():
     [제목]: (매력적인 블로그 제목 작성)
 
     [HTML 본문]:
-    (상단 공정고시 문구가 포함되고, <h3>와 <h4> 태그가 적용된 전체 HTML 본문 작성)
+    (상단 공정고시 문구가 포함되고, <h3>와 <h4>, <p> 태그가 적용된 전체 HTML 본문 작성)
 
     [쿠팡 추천제품]: 
     - 추천 상품명: (예: 관절 영양제 / 무릎 온열 보호대 등)
@@ -64,22 +60,20 @@ def generate_blog_content():
         model="gemini-3.6-flash",
         contents=prompt,
     )
-    print("3. 제미나이 응답 생성 완료")
     return response.text
 
 def send_to_telegram(message):
-    print("4. 텔레그램 전송 함수 진입")
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     
+    # 텔레그램은 제한된 태그만 허용하므로, 파싱 에러를 막기 위해 일반 텍스트 모드로 전송합니다.
+    # (티스토리 HTML 에디터에 붙여넣을 때는 AI가 생성해준 HTML 태그가 그대로 살아있어 정상 작동합니다!)
     payload = {
         "chat_id": TELEGRAM_CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML"
+        "text": message
+        # parse_mode를 제거하여 텔레그램이 HTML 태그 때문에 거부하는 현상을 원천 차단합니다.
     }
     
     response = requests.post(url, json=payload)
-    print(f"5. 텔레그램 응답 코드: {response.status_code}")
-    
     if response.status_code == 200:
         print("텔레그램으로 글 전송 성공!")
     else:
